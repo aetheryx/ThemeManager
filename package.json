@@ -1,11 +1,11 @@
 {
   "name": "ThemeSwitcher",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Provides a nice tab to manage your themes / cycle between them in Discord",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
 },
   "author": "Aetheryx",
-  "license": "ISC"
+  "license": "MIT"
 }
