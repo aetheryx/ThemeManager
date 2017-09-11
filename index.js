@@ -1,45 +1,45 @@
 const Plugin = module.parent.require('../Structures/Plugin');
 const e = window.DI.React.createElement;
 const { SettingsOptionButton, SettingsOptionTitle, SettingsDescription, SettingsOptionDescription, SettingsExpandableSection, SettingsOptionFilebox } = window.DI.require('./Structures/Components');
-const { SettingsOptionToggle, SettingsDivider } = require('./Structures');
+const { SettingsSnippetToggle, SettingsDivider } = require('./Structures');
 
 class ThemeManager extends Plugin {
     constructor (...args) {
         super(...args);
         window.DI.DISettings.registerSettingsTab(this, 'Theme Manager', ThemeManagerSettingsPanel);
+        this.parseSettings();
         this.loadSnippets();
+    }
+
+    parseSettings () {
+        if (!this.hasSettings || !Object.keys(this.settings).includes('snippets')) {
+            this.setSettingsNode('snippets', '[]');
+        }
+    }
+
+    get snippets () {
+        return JSON.parse(this.settings.snippets);
     }
 
     loadSnippets () {
         setTimeout(() => {
-            const snippets = JSON.parse(this.getSettingsNode('snippets'));
-            snippets
+            if (!window.DI.CssInjector.styleTag) {
+                return this.loadSnippets(); // if you're on a slower machine where DI's CSS tag hasn't initialized after 1 second, try again
+            }
+            this.snippets
                 .filter(snippet => snippet.enabled)
                 .forEach(snippet => {
                     window.DI.CssInjector.styleTag.innerHTML += snippet.content;
                 });
-        }, 2000);
-    }
-
-    get configTemplate () {
-        return {
-            color: '2E0854'
-        };
+        }, 1000); // give DI's CSS tag some time to initialize 
     }
 
     getSnippet (snippetName) {
-        const snippets = JSON.parse(this.getSettingsNode('snippets'));
-        if (!snippets.some(snippet => snippet.name === snippetName)) {
-            return false;
-        }
-        return snippets.find(snippet => snippet.name === snippetName);
+        return this.snippets.find(snippet => snippet.name === snippetName);
     }
 
     deleteSnippet (snippetName) {
-        const snippets = JSON.parse(this.getSettingsNode('snippets'));
-        if (!snippets.some(snippet => snippet.name === snippetName)) {
-            return;
-        }
+        const snippets = this.snippets;
         const snippet = snippets.find(snippet => snippet.name === snippetName);
         const index = snippets.indexOf(snippet);
         snippets.splice(index, 1);
@@ -47,18 +47,13 @@ class ThemeManager extends Plugin {
     }
 
     toggleSnippet (snippetName) {
-        const snippets = JSON.parse(this.getSettingsNode('snippets'));
-        if (!snippets.some(snippet => snippet.name === snippetName)) {
-            return;
-        }
+        const snippets = this.snippets;
         if (snippets.find(snippet => snippet.name === snippetName).enabled) {
             window.DI.CssInjector.styleTag.innerHTML += snippets.find(snippet => snippet.name === snippetName).content;
         } else {
             window.DI.CssInjector.styleTag.innerHTML = window.DI.CssInjector.styleTag.innerHTML.replace(snippets.find(snippet => snippet.name === snippetName).content, '');
         }
     }
-
-    unload () {}
 }
 
 let snippetCreatorElement;
@@ -76,9 +71,8 @@ class ThemeManagerSettingsPanel extends window.DI.React.Component {
             })
         ];
 
-        let files;
         try {
-            files = window._fs.readdirSync(this.props.plugin.settings.dirPath);
+            const files = window._fs.readdirSync(this.props.plugin.settings.dirPath);
             files.map(filename => {
                 if (!filename.endsWith('.css')) {
                     return;
@@ -146,13 +140,13 @@ class ThemeManagerSettingsPanel extends window.DI.React.Component {
                     e(SettingsOptionButton, {
                         text: 'Save',
                         onClick: () => {
-                            const snippets = JSON.parse(this.props.plugin.getSettingsNode('snippets'));
+                            const snippets = this.props.plugin.snippets;
                             const snippet = {
                                 name: document.getElementById('ThemeMGR_CSSName').value,
                                 content: document.getElementById('ThemeMGR_CSSTextArea').value,
                                 enabled: false
                             }
-                            if (!settings) {
+                            if (!snippets[0]) {
                                 this.props.plugin.setSettingsNode('snippets', JSON.stringify([snippet]))
                             } else {
                                 snippets.push(snippet);
@@ -181,22 +175,26 @@ class ThemeManagerSettingsPanel extends window.DI.React.Component {
             text: 'Add New Snippet'
         });
 
-        let snippets = [];
-        let settings = JSON.parse(this.props.plugin.getSettingsNode('snippets'));
-        if (settings) {
-            settings.forEach(snippet => {
-                snippets.push(
-                    e(SettingsOptionToggle, {
-                        onDelete: () => { this.forceUpdate(); },
-                        onEdit:   () => { snippetCreator(true, snippet.name); this.forceUpdate(); },
-                        title: snippet.name,
-                        default: false,
-                        plugin: this.props.plugin,
-                        extra: [ e(SettingsDivider) ]
-                    })
-                )
-            })
-        }
+        let snippetToggles = [];
+        const snippets = this.props.plugin.snippets;
+        snippets.forEach(snippet => {
+            snippetToggles.push(
+                e(SettingsSnippetToggle, {
+                    onDelete: () => {
+                        this.forceUpdate();
+                    },
+                    onEdit: () => {
+                        snippetCreator(true, snippet.name);
+                        this.forceUpdate();
+                    },
+                    title: snippet.name,
+                    default: false,
+                    plugin: this.props.plugin,
+                    extra: [ e(SettingsDivider) ]
+                })
+            )
+        })
+    
 
         return e('div', {},
             e(SettingsOptionDescription, {
@@ -219,9 +217,7 @@ class ThemeManagerSettingsPanel extends window.DI.React.Component {
                     filters: [],
                     properties: ['openDirectory', 'createDirectory']
                 },
-                onApply: () => {
-                    this.forceUpdate()
-                }
+                onApply: () => { this.forceUpdate(); }
             }),
 
             e(SettingsExpandableSection, {
@@ -231,7 +227,7 @@ class ThemeManagerSettingsPanel extends window.DI.React.Component {
 
             e(SettingsExpandableSection, {
                 title: 'Custom CSS',
-                components: (snippets).concat(addButton)
+                components: snippetToggles.concat(addButton)
             })
         );
     }
