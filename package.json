@@ -1,11 +1,17 @@
 {
   "name": "ThemeSwitcher",
-  "version": "0.0.1",
-  "description": "Provides a nice tab to manage your themes / cycle between them in Discord",
+  "version": "0.0.2",
+  "description": "Allows you to hot-swap between multiple themes and easily add and manage custom CSS snippets.",
   "main": "index.js",
+  "keywords": [
+    "di",
+    "discordinjections",
+    "discord",
+    "discord themes"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-},
+    "test": "eslint ."
+  },
   "author": "Aetheryx",
   "license": "MIT"
 }
