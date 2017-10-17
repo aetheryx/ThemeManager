@@ -1,10 +1,11 @@
-const e = window.DI.React.createElement;
+// This element is basically a modified SettingsOptionToggle with my own 'Edit snippet' and 'Delete snippet' buttons added in.
 
+const e = window.DI.React.createElement;
 const Base = window.DI.require('Structures/Components/SettingsOptionBase.js');
-const { SettingsOptionButton } = window.DI.require('Structures/Components/')
+const { SettingsOptionButton } = window.DI.require('Structures/Components/');
 
 class SettingsOptionToggle extends Base {
-    constructor(props) {
+    constructor (props) {
         super(props);
         this.state = {
             checked: this.getProp()
@@ -12,18 +13,17 @@ class SettingsOptionToggle extends Base {
     }
 
     getProp () {
-        const res = JSON.parse(this.props.plugin.getSettingsNode('snippets')).find(snippet => snippet.name === this.props.title).enabled;
-        return res;
+        return this.props.plugin.snippets.find(snippet => snippet.name === this.props.title).enabled;
     }
 
     setProp (arg) {
-        const snippetName = this.props.title
-        const settings = JSON.parse(this.props.plugin.getSettingsNode('snippets'))
+        const snippetName = this.props.title;
+        const settings = JSON.parse(this.props.plugin.getSettingsNode('snippets'));
         settings.find(snippet => snippet.name === snippetName).enabled = arg;
         this.props.plugin.setSettingsNode('snippets', JSON.stringify(settings));
     }
 
-    click() {
+    click () {
         this.setProp(!this.getProp());
         this.setState(() => ({
             checked: this.getProp()
@@ -31,7 +31,7 @@ class SettingsOptionToggle extends Base {
         this.props.plugin.toggleSnippet(this.props.title);
     }
 
-    render() {
+    render () {
         const extra = this.props.extra || [];
         return e('div', {
             className: 'flex-lFgbSz flex-3B1Tl4 vertical-3X17r5 flex-3B1Tl4 directionColumn-2h-LPR justifyStart-2yIZo0 alignStretch-1hwxMa noWrap-v6g9vO margin-top-20 margin-bottom-20',
@@ -66,7 +66,7 @@ class SettingsOptionToggle extends Base {
                     onClick: this.props.onEdit
                 }),
                 e('div', {
-                    className: 'flexChild-1KGW5q switchEnabled-3CPlLV switch-3lyafC value-kmHGfs sizeDefault-rZbSBU size-yI1KRe themeDefault-3M0dJU '
+                    className: 'flexChild-1KGW5q switchEnabled-3CPlLV switch-3lyafC value-kmHGfs sizeDefault-rZbSBU size-yI1KRe themeDefault-3M0dJU ' // eslint-disable-line prefer-template
                     + (this.state.checked ? 'valueChecked-3Bzkbm' : 'valueUnchecked-XR6AOk'),
                     onClick: this.click.bind(this),
                     style: {
@@ -75,7 +75,7 @@ class SettingsOptionToggle extends Base {
                 },
                     e('input', {
                         type: 'checkbox',
-                        className: `checkbox-1KYsPm checkboxEnabled-4QfryV checkbox-1KYsPm`,
+                        className: 'checkbox-1KYsPm checkboxEnabled-4QfryV checkbox-1KYsPm',
                         value: this.state.checked ? 'on' : 'off'
                     }),
                     e('div', {
